@@ -254,7 +254,6 @@ void ball_center_coordinates(ALLEGRO_DISPLAY* display, float* ball_center) {
                 x_center = x_center + x;
                 y_center = y_center + y;
                 counter = counter + 1;
-                printf("Trovato un pixel rosso a (%d, %d)\n", x, y);
             }
         }
     }
@@ -282,7 +281,9 @@ int compute_ball_state(float* ball_center) {
 }
 
 
-void visualize(float camera_pan, float camera_tilt) {
+/*void visualize(float camera_pan, float camera_tilt) {
+
+    al_draw_filled_rectangle(0, 0, disp.w_display, disp.h_display / 2 + 30, al_map_rgb(0, 0, 0));
 
     ball_state.x_c2 = ball_state.x_c2 + 1;
     if (ball_state.x_c2 > disp.w_display) { ball_state.x_c2 = disp.w_display / 2 + disp.edge; }
@@ -300,10 +301,27 @@ void visualize(float camera_pan, float camera_tilt) {
     al_draw_filled_circle(ball_state.x_c2, ball_state.y_c2, 5, al_map_rgb(255, 0, 0));
     al_flip_display();
 
+}*/
+
+void move_camera(int action) {
+    switch (action)
+    {
+    case 0:
+        camera_tilt = box_height;
+        break;
+    case 1:
+        camera_tilt = -box_height;
+        break;
+    case 2:
+        camera_pan = -box_width;
+        break;
+    case 3:
+        camera_pan = box_width;
+        break;
+    }
 }
 
 void start_training(ALLEGRO_DISPLAY* display) {
-    float camera_pan = 0.0, camera_tilt = 0.0;
     // Initialization
     float* R_prova = initialize_R();
     initialize_Q();
@@ -311,7 +329,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
     float gamma = 0.9;
     float alpha = 0.1;
     int state= 7;
-    int action, next_state;
+    int action = -100, next_state;
     bool is_acceptable;
     float reward, maxQ;
     int episod = 0;
@@ -324,7 +342,8 @@ void start_training(ALLEGRO_DISPLAY* display) {
 
         while (!done && steps < 100)
         {
-            visualize(camera_pan, camera_tilt);
+            //move_camera(action); 
+            //visualize(camera_pan, camera_tilt);
             ball_center_coordinates(display, ball_center);
             state = compute_ball_state(ball_center);
             action = choose_action(Q, state, epsilon);
@@ -337,8 +356,6 @@ void start_training(ALLEGRO_DISPLAY* display) {
             // update Q
             Q[state * 4 + action] = (1 - alpha) * Q[state * 4 + action] + alpha * (reward + gamma * maxQ);
             state = next_state;
-            printf("%d\t", state);
-            printf("\n");
 
             if (next_state == central_box)
                 counter++;
@@ -349,6 +366,8 @@ void start_training(ALLEGRO_DISPLAY* display) {
         }
     }
 }
+
+
 
 /*
 int sgn(float i);

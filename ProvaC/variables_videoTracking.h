@@ -30,8 +30,6 @@
 typedef struct {
   float x_c1;       // x position ball camera 1
   float y_c1;       // y position ball camera 1
-  float x_c2;		// x position ball camera 2
-  float y_c2;		// y position ball camera 2 
 } STATE;
 
 typedef struct {
@@ -60,7 +58,8 @@ typedef struct {
     Slider all_sliders[3];
 } all_sliders;
 
-STATE ball_state = {1, 0, 965, 0};
+//STATE ball_state = {1, 0, 965, 0};
+STATE ball_state = {480, 270};
 DISPLAY disp = {1920, 1080, 5};
 BUTTON load = { 100, 800, 250, 50, "LOAD", al_map_rgb(0, 0, 255) };
 BUTTON save = { 400, 800, 250, 50, "SAVE", al_map_rgb(0, 0, 255) };
@@ -69,6 +68,12 @@ BUTTON button_start_training = { 1000, 800, 250, 50, "START TRAINING", al_map_rg
 Slider epsilon_slider = { 50, disp.h_display - 200, disp.w_display - 100, 20, 0.5, false };
 Slider alpha_slider = { 50, disp.h_display - 100, disp.w_display - 100, 20, 0.5, false };
 Slider gamma_slider = { 50, disp.h_display - 50, disp.w_display - 100, 20, 0.5, false };
+
+// variables trajectory
+float x_plot, y_plot;
+
+// variables camera
+float camera_pan = 0.0, camera_tilt = 0.0;
 
 // variables training algorithm 
 #define REWARD_NEGATIVE -20

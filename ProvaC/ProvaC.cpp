@@ -93,12 +93,6 @@ int main()
                     buttons.all_buttons[button_index].color = al_map_rgb(255, 0, 0);
                     color_change_timer = al_get_time();
                     // funzione che fa fare cose ai bottoni
-                    switch (button_index)
-                    {
-                    case 3:
-                        start_training(display);
-                        break;
-                    }
                 }
             }
         }
@@ -120,26 +114,16 @@ int main()
                 if (elapsed_time >= color_change_duration) {
                     buttons.all_buttons[button_index].color = al_map_rgb(0,0,255);
                     flag = false;
+                    switch (button_index)
+                    {
+                    case 3:
+                        start_training(display);
+                        break;
+                    }
                 }
             }
 
-            /*ball_state.x_c2 = ball_state.x_c2 + 1;
-            if (ball_state.x_c2 > disp.w_display) { ball_state.x_c2 = disp.w_display / 2 + disp.edge; }
-            ball_state.y_c2 = sin(0.1 * ball_state.x_c2) * disp.h_display / 4 + disp.h_display / 4;
-            ball_state.x_c1 = 2 * ball_state.x_c2 - (disp.w_display / 2 - disp.edge) * 2 - (disp.w_display / 2 - disp.edge) / 2;
-            ball_state.y_c1 = 2 * ball_state.y_c2 - disp.h_display / 4;
-
-            // zoom
-            al_draw_filled_rectangle(1, 1, disp.w_display / 2 - disp.edge, disp.h_display / 2, al_map_rgb(255, 255, 255));
-            if ((ball_state.x_c1 - camera_pan < disp.w_display / 2 - disp.edge) && (ball_state.y_c1 - camera_tilt < disp.h_display / 2)) {
-                al_draw_filled_circle(ball_state.x_c1 - camera_pan, ball_state.y_c1 - camera_tilt, 20, al_map_rgb(255, 0, 0));
-            }
-            // external view
-            al_draw_filled_rectangle(disp.w_display / 2 + disp.edge, 1, disp.w_display, disp.h_display / 2, al_map_rgb(255, 255, 255));
-            al_draw_filled_circle(ball_state.x_c2, ball_state.y_c2, 5, al_map_rgb(255, 0, 0));
-            //al_draw_filled_circle(420, 300, 10, al_map_rgb(255, 0, 0));*/
-
-            al_flip_display();
+           al_flip_display();
         }
         
         //start_training(display);
