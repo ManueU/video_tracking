@@ -203,11 +203,12 @@ float decode_reward(int action, int state) {
     
 bool isdone(int next_state, int counter)
 {
-    bool done;
+    bool done = false;
     if (counter == 5)
         done = true;
-    else if (next_state >= BXW * BXH * 4)
+    else if (next_state >= BXW * BXH * 4 || next_state < 0)
         done = true;
+    
     return done;
 }
 
@@ -263,7 +264,7 @@ void ball_center_coordinates(ALLEGRO_DISPLAY* display, float* ball_center) {
         ball_center[1] = y_center / counter;
     }
     else {
-        ball_center[0] = ball_center[1] = -1;  // Valori di default se non si trovano pixel rossi
+        ball_center[0] = ball_center[1] = -100;  // Valori di default se non si trovano pixel rossi
     }
 
     al_unlock_bitmap(backbuffer);
@@ -272,36 +273,63 @@ void ball_center_coordinates(ALLEGRO_DISPLAY* display, float* ball_center) {
 
 
 int compute_ball_state(float* ball_center) {
-    int x_box = int(ball_center[0]/ box_width);
-    int y_box = int(ball_center[1] / box_height);
-
-    int state = y_box * BXW + x_box;
+    int state; 
+    if (ball_center[0] == -100)
+    {
+        state = -1; 
+    }
+    else 
+    {
+        int x_box = int(ball_center[0]/ box_width);
+        int y_box = int(ball_center[1] / box_height);
+        state = y_box * BXW + x_box;
+    }
 
     return state;
 }
 
+void draw_trajectory(int trajectory_ID) {
+    al_draw_line(trajectory_ax_x.x_1, trajectory_ax_x.y_1, trajectory_ax_x.x_2, trajectory_ax_x.y_2, al_map_rgb(255, 255, 255), 2);
+    al_draw_line(trajectory_ax_y.x_1, trajectory_ax_y.y_1, trajectory_ax_y.x_2, trajectory_ax_y.y_2, al_map_rgb(255, 255, 255), 2);
 
-/*void visualize(float camera_pan, float camera_tilt) {
+    switch (trajectory_ID)
+    {
+    case 0:
+        for (int x = 0; x < (trajectory_ax_x.x_2 - trajectory_ax_x.x_1); x++) {
+            y_plot[x] = amplitude * sin(frequency * x + phase) + trajectory_ax_y.y_1 + (trajectory_ax_y.y_2 - trajectory_ax_y.y_1) / 2;
+            x_plot[x] = x + trajectory_ax_x.x_1;
+            al_draw_pixel(x_plot[x], y_plot[x], al_map_rgb(255, 0, 0)); // Disegna un pixel rosso
+        }
+        break;
+    }
+}
 
-    al_draw_filled_rectangle(0, 0, disp.w_display, disp.h_display / 2 + 30, al_map_rgb(0, 0, 0));
+void draw_results() {
+    al_draw_line(ax_totreward_x.x_1, ax_totreward_x.y_1, ax_totreward_x.x_2, ax_totreward_x.y_2, al_map_rgb(255, 255, 255), 2); 
+    al_draw_line(ax_totreward_y.x_1, ax_totreward_y.y_1, ax_totreward_y.x_2, ax_totreward_y.y_2, al_map_rgb(255, 255, 255), 2); 
+    //al_draw_line(ax_framecount_y.x_1, ax_framecount_y.y_1, ax_framecount_y.x_2, ax_framecount_y.y_2, al_map_rgb(255, 255, 255), 2);
 
-    ball_state.x_c2 = ball_state.x_c2 + 1;
-    if (ball_state.x_c2 > disp.w_display) { ball_state.x_c2 = disp.w_display / 2 + disp.edge; }
-    ball_state.y_c2 = sin(0.1 * ball_state.x_c2) * disp.h_display / 4 + disp.h_display / 4;
-    ball_state.x_c1 = 2 * ball_state.x_c2 - (disp.w_display / 2 - disp.edge) * 2 - (disp.w_display / 2 - disp.edge) / 2;
-    ball_state.y_c1 = 2 * ball_state.y_c2 - disp.h_display / 4;
+    al_draw_line(ax_framecount_x.x_1, ax_framecount_x.y_1, ax_framecount_x.x_2, ax_framecount_x.y_2, al_map_rgb(255, 255, 255), 2); 
+    al_draw_line(ax_framecount_y.x_1, ax_framecount_y.y_1, ax_framecount_y.x_2, ax_framecount_y.y_2, al_map_rgb(255, 255, 255), 2);
+
+}
+
+
+
+void visualize(float camera_pan, float camera_tilt) {
+
+    al_draw_filled_rectangle(0, 0, disp.w_display, disp.h_display / 2 + 30, al_map_rgb(0, 0, 0)); // rectangle used to cover the red ball
+    draw_trajectory(trajectory_ID); // draw overall trajectory and axes
+    al_draw_filled_circle(ball_state.x_2, ball_state.y_2, 5, al_map_rgb(0, 255, 0));
 
     // zoom
     al_draw_filled_rectangle(1, 1, disp.w_display / 2 - disp.edge, disp.h_display / 2, al_map_rgb(255, 255, 255));
-    if ((ball_state.x_c1 - camera_pan < disp.w_display / 2 - disp.edge) && (ball_state.y_c1 - camera_tilt < disp.h_display / 2)) {
-        al_draw_filled_circle(ball_state.x_c1 - camera_pan, ball_state.y_c1 - camera_tilt, 20, al_map_rgb(255, 0, 0));
+    if ((ball_state.x_1 < disp.w_display / 2 - disp.edge) && (ball_state.y_1 < disp.h_display / 2)) {
+        al_draw_filled_circle(ball_state.x_1, ball_state.y_1, 20, al_map_rgb(255, 0, 0));
     }
-    // external view
-    al_draw_filled_rectangle(disp.w_display / 2 + disp.edge, 1, disp.w_display, disp.h_display / 2, al_map_rgb(255, 255, 255));
-    al_draw_filled_circle(ball_state.x_c2, ball_state.y_c2, 5, al_map_rgb(255, 0, 0));
     al_flip_display();
 
-}*/
+}
 
 void move_camera(int action) {
     switch (action)
@@ -313,13 +341,14 @@ void move_camera(int action) {
         camera_tilt = -box_height;
         break;
     case 2:
-        camera_pan = -box_width;
+        camera_pan = box_width;
         break;
     case 3:
-        camera_pan = box_width;
+        camera_pan = -box_width;
         break;
     }
 }
+
 
 void start_training(ALLEGRO_DISPLAY* display) {
     // Initialization
@@ -335,35 +364,55 @@ void start_training(ALLEGRO_DISPLAY* display) {
     int episod = 0;
     float ball_center[2];
 
+    draw_results();
     for (int episode = 0; episode < 10000; episode++) {
         bool done = false;
         int steps = 0;
         int counter = 0;
-
+        int traj_counter = 0; 
         while (!done && steps < 100)
         {
-            //move_camera(action); 
-            //visualize(camera_pan, camera_tilt);
+            move_camera(action); 
+            if (steps == 0)
+            {
+                ball_state.x_1 = (disp.w_display - disp.edge) / 4 - disp.w_display/8; // disp.w_display/8 è un offset per far iniziare il training non dal centro
+                ball_state.y_1 = disp.h_display / 4;
+            }
+            else
+            {
+                ball_state.x_1 = ball_state.x_1 + (x_plot[traj_counter] - x_plot[traj_counter - 1])/20 + camera_pan; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+                ball_state.y_1 = ball_state.y_1 + (y_plot[traj_counter] - y_plot[traj_counter - 1])/20 + camera_tilt; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+            }
+                
+            ball_state.x_2 = x_plot[traj_counter];
+            ball_state.y_2 = y_plot[traj_counter]; 
+            visualize(camera_pan, camera_tilt);
             ball_center_coordinates(display, ball_center);
             state = compute_ball_state(ball_center);
             action = choose_action(Q, state, epsilon);
-            printf("%d\t", action);
             next_state = compute_state(action, state);
             // scelta reward da R
             reward = decode_reward(action, state);
+            tot_reward += reward; 
             // compute new Q target
             maxQ = compute_maxQ(Q, state);
             // update Q
             Q[state * 4 + action] = (1 - alpha) * Q[state * 4 + action] + alpha * (reward + gamma * maxQ);
+            
+            done = isdone(state, counter);           
             state = next_state;
 
             if (next_state == central_box)
                 counter++;
 
-            //done = isdone(next_state, counter);           
 
+            traj_counter++;
             steps++;
         }
+        al_draw_pixel(960+episode, 700, al_map_rgb(0, 0, 255)); 
+        //al_draw_pixel(ax_totreward_x.x_1 + episode, ax_totreward_x.y_1 + tot_reward/10000, al_map_rgb(0, 0, 255));
+        al_draw_pixel(ax_framecount_x.x_1 + episode, ax_framecount_x.y_1 + steps, al_map_rgb(0, 0, 255));
+        al_flip_display(); 
     }
 }
 

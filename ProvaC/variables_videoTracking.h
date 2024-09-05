@@ -26,10 +26,18 @@
 */
 
 /* VARIABLES DECLARATIONS */
+typedef struct { // struct assi 
+    int x_1;       
+    int y_1;  
+    int x_2;
+    int y_2;
+} AXES;
 
 typedef struct {
-  float x_c1;       // x position ball camera 1
-  float y_c1;       // y position ball camera 1
+  float x_1;       // x position ball 1
+  float y_1;       // y position ball 1
+  float x_2;       // x position ball 2 (trajectory)
+  float y_2;       // y position ball 2 (trajectory)
 } STATE;
 
 typedef struct {
@@ -59,7 +67,7 @@ typedef struct {
 } all_sliders;
 
 //STATE ball_state = {1, 0, 965, 0};
-STATE ball_state = {480, 270};
+STATE ball_state = {480, 270, 0, 0};
 DISPLAY disp = {1920, 1080, 5};
 BUTTON load = { 100, 800, 250, 50, "LOAD", al_map_rgb(0, 0, 255) };
 BUTTON save = { 400, 800, 250, 50, "SAVE", al_map_rgb(0, 0, 255) };
@@ -70,16 +78,32 @@ Slider alpha_slider = { 50, disp.h_display - 100, disp.w_display - 100, 20, 0.5,
 Slider gamma_slider = { 50, disp.h_display - 50, disp.w_display - 100, 20, 0.5, false };
 
 // variables trajectory
-float x_plot, y_plot;
+int trajectory_ID = 0;
+AXES trajectory_ax_x = {disp.w_display / 2 + disp.edge,  disp.h_display / 2, disp.w_display, disp.h_display / 2 };
+AXES trajectory_ax_y = {disp.w_display / 2 + disp.edge,  disp.h_display / 2, disp.w_display / 2 + disp.edge,1 };
+float amplitude = 100;
+float frequency = 0.01;
+float phase = 0;
+
+float x_plot[955], y_plot[955];
+
+// cariables results 
+AXES ax_totreward_x = {disp.w_display*3/8, disp.h_display*3/4 - disp.edge, disp.w_display*5/8,  disp.h_display * 3 / 4 - disp.edge };
+AXES ax_totreward_y = { disp.w_display * 3 / 8, disp.h_display * 3 / 4 - disp.edge, disp.w_display * 3 / 8,  disp.h_display/2 + disp.edge };
+
+AXES ax_framecount_x = { disp.w_display * 3 / 8, disp.h_display - disp.edge, disp.w_display * 5 / 8,  disp.h_display - disp.edge };
+AXES ax_framecount_y = { disp.w_display * 3 / 8, disp.h_display - disp.edge, disp.w_display * 3 / 8,  disp.h_display *3 / 4 + disp.edge };
 
 // variables camera
 float camera_pan = 0.0, camera_tilt = 0.0;
 
+
 // variables training algorithm 
+float tot_reward = 0; 
 #define REWARD_NEGATIVE -20
 #define REWARD_POSITIVE +100
-#define BXW 5 // number box width
-#define BXH 3 // number box height
+#define BXW 15 // number box width
+#define BXH 13 // number box height
 float Q[BXW * BXH * 4];
 float R[BXW * BXH * 4];
 int central_box = (BXW * BXH -1) / 2; // NOTE: it works only if the number of boxes is odd!!

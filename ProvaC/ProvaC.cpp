@@ -104,9 +104,9 @@ int main()
             draw_button(buttons.all_buttons[1], font, buttons.all_buttons[1].color);
             draw_button(buttons.all_buttons[2], font, buttons.all_buttons[2].color);
             draw_button(buttons.all_buttons[3], font, buttons.all_buttons[3].color);
-            draw_slider(sliders.all_sliders[0]);
-            draw_slider(sliders.all_sliders[1]);
-            draw_slider(sliders.all_sliders[2]);
+            //draw_slider(sliders.all_sliders[0]);
+            //draw_slider(sliders.all_sliders[1]);
+            //draw_slider(sliders.all_sliders[2]);
 
             // change color when pressed
             if (flag) {
@@ -122,12 +122,11 @@ int main()
                     }
                 }
             }
-
+           draw_trajectory(trajectory_ID);
+           draw_results(); 
            al_flip_display();
         }
         
-        //start_training(display);
-
     }
     al_destroy_display(display);
     
