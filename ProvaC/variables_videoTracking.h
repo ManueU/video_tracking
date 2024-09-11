@@ -69,10 +69,10 @@ typedef struct {
 //STATE ball_state = {1, 0, 965, 0};
 STATE ball_state = {480, 270, 0, 0};
 DISPLAY disp = {1920, 1080, 5};
-BUTTON load = { 100, 800, 250, 50, "LOAD", al_map_rgb(0, 0, 255) };
-BUTTON save = { 400, 800, 250, 50, "SAVE", al_map_rgb(0, 0, 255) };
-BUTTON button_start_simulation = { 700, 800, 250, 50, "START SIMULATION", al_map_rgb(0, 0, 255) };
-BUTTON button_start_training = { 1000, 800, 250, 50, "START TRAINING", al_map_rgb(0, 0, 255) };
+BUTTON load = { 100, 600, 250, 50, "LOAD", al_map_rgb(0, 0, 255) };
+BUTTON save = { 100, 650, 250, 50, "SAVE", al_map_rgb(0, 0, 255) };
+BUTTON button_start_simulation = { 100, 700, 250, 50, "START SIMULATION", al_map_rgb(0, 0, 255) };
+BUTTON button_start_training = { 100, 750, 250, 50, "START TRAINING", al_map_rgb(0, 0, 255) };
 Slider epsilon_slider = { 50, disp.h_display - 200, disp.w_display - 100, 20, 0.5, false };
 Slider alpha_slider = { 50, disp.h_display - 100, disp.w_display - 100, 20, 0.5, false };
 Slider gamma_slider = { 50, disp.h_display - 50, disp.w_display - 100, 20, 0.5, false };
@@ -87,7 +87,7 @@ float phase = 0;
 
 float x_plot[955], y_plot[955];
 
-// cariables results 
+// variables results 
 AXES ax_totreward_x = {disp.w_display*3/8, disp.h_display*3/4 - disp.edge, disp.w_display*5/8,  disp.h_display * 3 / 4 - disp.edge };
 AXES ax_totreward_y = { disp.w_display * 3 / 8, disp.h_display * 3 / 4 - disp.edge, disp.w_display * 3 / 8,  disp.h_display/2 + disp.edge };
 
@@ -100,6 +100,7 @@ float camera_pan = 0.0, camera_tilt = 0.0;
 
 // variables training algorithm 
 float tot_reward = 0; 
+int episode_target = 1200; 
 #define REWARD_NEGATIVE -20
 #define REWARD_POSITIVE +100
 #define BXW 15 // number box width
