@@ -92,7 +92,7 @@ AXES ax_totreward_x = {disp.w_display*3/8, disp.h_display*3/4 - disp.edge, disp.
 AXES ax_totreward_y = { disp.w_display * 3 / 8, disp.h_display * 3 / 4 - disp.edge, disp.w_display * 3 / 8,  disp.h_display/2 + disp.edge };
 
 AXES ax_framecount_x = { disp.w_display * 3 / 8, disp.h_display - disp.edge, disp.w_display * 5 / 8,  disp.h_display - disp.edge };
-AXES ax_framecount_y = { disp.w_display * 3 / 8, disp.h_display - disp.edge, disp.w_display * 3 / 8,  disp.h_display *3 / 4 + disp.edge };
+AXES ax_framecount_y = { disp.w_display * 3 / 8, disp.h_display * 3 / 4 + disp.edge, disp.w_display * 3 / 8,  disp.h_display - disp.edge };
 
 // variables camera
 float camera_pan = 0.0, camera_tilt = 0.0;
@@ -100,11 +100,13 @@ float camera_pan = 0.0, camera_tilt = 0.0;
 
 // variables training algorithm 
 float tot_reward = 0; 
-int episode_target = 1200; 
+int episode_target = 2500; 
+int steps_target = 1000; 
 #define REWARD_NEGATIVE -20
-#define REWARD_POSITIVE +100
-#define BXW 15 // number box width
-#define BXH 13 // number box height
+#define REWARD_NEUTRAL -10
+#define REWARD_POSITIVE +1000
+#define BXW 5 // number box width
+#define BXH 3 // number box height
 float Q[BXW * BXH * 4];
 float R[BXW * BXH * 4];
 int central_box = (BXW * BXH -1) / 2; // NOTE: it works only if the number of boxes is odd!!

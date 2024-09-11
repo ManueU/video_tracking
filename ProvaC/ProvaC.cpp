@@ -47,26 +47,6 @@ int main()
     const double color_change_duration = 0.5;
     srand(static_cast<unsigned int>(time(0)));  // Initialize seed randomly
 
-
-    /*printf("\nPoints Matrix : \n");
-
-    for (int st = 0; st < BXW * BXH; st++)
-    {
-        for (int act = 0; act < 4; act++)
-        {
-            printf("%f\t", R_prova[st * 4 + act]);
-        }
-        printf("\n");
-    }
-    printf("\n\n\n");
-
-    printf("\State: \n");
-    printf("%d\t", state);
-    printf("\n \Action: \n");
-    printf("%d\t", action);
-    printf("\n \Next state: \n");
-    printf("%d\t", next_state);*/
-
     int button_index;
     int slider_index;
     bool running = true;

@@ -120,8 +120,8 @@ float* initialize_R() {
 
                 if (x < box_width * BXW && x > 0 && y < box_height * BXH && y > 0) {
                    distance = euclidean_distance(pos_box_temp, pos_center);
-                   if (distance == 0) {
-                       R[state*4 + action] = REWARD_POSITIVE;
+                   if (distance < 2*box_width) {
+                       R[state*4 + action] = REWARD_NEUTRAL;
                    }
                    else {
                        R[state * 4 + action] = (distance/100)*REWARD_NEGATIVE;
@@ -187,10 +187,14 @@ int compute_state(int action, int current_state) {
         next_state = current_state - BXW;
         break;
     case 2:
-        next_state = current_state + 1;
+        if (current_state % BXW == 0)
+            next_state = -100;
+        else next_state = current_state + 1; 
         break;
     case 3:
-        next_state = current_state - 1;
+        if ((current_state + 1) % BXW == 0)
+            next_state = -100;
+        else next_state = current_state - 1;         
         break;
     }
 
@@ -204,7 +208,7 @@ float decode_reward(int action, int state) {
 bool isdone(int next_state, int counter)
 {
     bool done = false;
-    if (counter == 5)
+    if (counter == 15)
         done = true;
     else if (next_state >= BXW * BXH * 4 || next_state < 0)
         done = true;
@@ -356,7 +360,7 @@ float rescale(char axis, AXES axes, int min, int max, float value)
     if (axis == 'x')
         pixel = (value - min) * (axes.x_2 - axes.x_1) /range  + axes.x_1; 
     else if (axis == 'y')
-        pixel = axes.y_2 - (min - value) * (axes.y_1 - axes.y_2) / range;
+        pixel = axes.y_2 - (value - min) * (axes.y_2 - axes.y_1) / range;
     return pixel; 
 }
 
@@ -365,16 +369,37 @@ float rescale(char axis, AXES axes, int min, int max, float value)
 void start_training(ALLEGRO_DISPLAY* display) {
     // Initialization
     float* R_prova = initialize_R();
+    printf("\nPoints Matrix : \n");
+
+    for (int st = 0; st < BXW * BXH; st++)
+    {
+        for (int act = 0; act < 4; act++)
+        {
+            printf("%f\t", R_prova[st * 4 + act]);
+        }
+        printf("\n");
+    }
+    printf("\n\n\n");
+
     initialize_Q();
-    float epsilon = 0.7;
+    float epsilon = 1;
     float gamma = 0.9;
     float alpha = 0.1;
-    int state= 7;
+    int state;
     int action = -100, next_state;
     bool is_acceptable;
     float reward, maxQ;
     int episod = 0;
     float ball_center[2];
+
+    float pixel_x_plot1;
+    float pixel_y_plot1; 
+    float pixel_x_tmp_plot1;
+    float pixel_y_tmp_plot1;
+    float pixel_x_plot2;
+    float pixel_y_plot2;
+    float pixel_x_tmp_plot2 = 0;
+    float pixel_y_tmp_plot2 = 0;
 
     draw_results();
     for (int episode = 0; episode < episode_target; episode++) {
@@ -383,9 +408,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
         int steps = 0;
         int counter = 0;
         int traj_counter = 0; 
-        float pixel_x;
-        float pixel_y; 
-        while (!done && steps < 100)
+        while (!done && steps < steps_target)
         {
             move_camera(action); 
             if (steps == 0)
@@ -395,8 +418,10 @@ void start_training(ALLEGRO_DISPLAY* display) {
             }
             else
             {
-                ball_state.x_1 = ball_state.x_1 + (x_plot[traj_counter] - x_plot[traj_counter - 1])/20 + camera_pan; // 20 è una scale_factor altrimenti la pallina va troppo veloce
-                ball_state.y_1 = ball_state.y_1 + (y_plot[traj_counter] - y_plot[traj_counter - 1])/20 + camera_tilt; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+                //ball_state.x_1 = ball_state.x_1 + (x_plot[traj_counter] - x_plot[traj_counter - 1])/2000 + camera_pan; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+                //ball_state.y_1 = ball_state.y_1 + (y_plot[traj_counter] - y_plot[traj_counter - 1])/2000 + camera_tilt; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+                ball_state.x_1 = ball_state.x_1 + camera_pan;
+                ball_state.y_1 = ball_state.y_1 + camera_tilt;
             }
                 
             ball_state.x_2 = x_plot[traj_counter];
@@ -411,26 +436,60 @@ void start_training(ALLEGRO_DISPLAY* display) {
             tot_reward += reward; 
             // compute new Q target
             maxQ = compute_maxQ(Q, state);
+            if (counter == 5)
+            {
+                reward = REWARD_POSITIVE; 
+            }
             // update Q
             Q[state * 4 + action] = (1 - alpha) * Q[state * 4 + action] + alpha * (reward + gamma * maxQ);
             
-            done = isdone(state, counter);           
-            state = next_state;
 
-            if (next_state == central_box)
+            printf("\Q Matrix : \n");
+
+            for (int st = 0; st < BXW * BXH; st++)
+            {
+                for (int act = 0; act < 4; act++)
+                {
+                    printf("%f\t", Q[st * 4 + act]);
+                }
+                printf("\n");
+            }
+            printf("\n\n\n");
+
+            done = isdone(next_state, counter);           
+
+            if (reward == REWARD_NEUTRAL)
                 counter++;
 
 
             traj_counter++;
             steps++;
         }
-        pixel_x = rescale('x', ax_totreward_x, 0, episode_target, episode);
-        pixel_y = rescale('y', ax_totreward_y, -10000, 500, tot_reward);
-        al_draw_pixel(pixel_x, pixel_y, al_map_rgb(255, 0, 0));
+        epsilon = 0.999*epsilon;
+        //printf("%f", epsilon);
+
+        pixel_x_plot1 = rescale('x', ax_totreward_x, 0, episode_target, episode);
+        pixel_y_plot1 = rescale('y', ax_totreward_y, -10000, 5000, tot_reward);
+
+        pixel_x_plot2 = rescale('x', ax_framecount_x, 0, episode_target, episode);
+        pixel_y_plot2 = rescale('y', ax_framecount_y, 0, steps_target, steps);
+        printf("tot reward %f \n", tot_reward);
+
+
+        if(episode > 0)
+        {
+            al_draw_line(pixel_x_tmp_plot1, pixel_y_tmp_plot1, pixel_x_plot1, pixel_y_plot1, al_map_rgb(255, 0, 0), 0.5);
+            al_draw_line(pixel_x_tmp_plot2, pixel_y_tmp_plot2, pixel_x_plot2, pixel_y_plot2, al_map_rgb(255, 0, 0), 0.5);
+        }
+        pixel_x_tmp_plot1 = pixel_x_plot1;
+        pixel_y_tmp_plot1 = pixel_y_plot1;
+        pixel_x_tmp_plot2 = pixel_x_plot2;
+        pixel_y_tmp_plot2 = pixel_y_plot2;
         //al_draw_pixel(ax_totreward_x.x_1 + episode, ax_totreward_x.y_1 + tot_reward/10000, al_map_rgb(0, 0, 255));
         //al_draw_pixel(ax_framecount_x.x_1 + episode, ax_framecount_x.y_1 + steps, al_map_rgb(0, 0, 255));
         al_flip_display(); 
     }
+    int daje = 0; 
 }
 
 
