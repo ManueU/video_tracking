@@ -349,6 +349,18 @@ void move_camera(int action) {
     }
 }
 
+float rescale(char axis, AXES axes, int min, int max, float value)
+{
+    int range = max - min; 
+    int pixel; 
+    if (axis == 'x')
+        pixel = (value - min) * (axes.x_2 - axes.x_1) /range  + axes.x_1; 
+    else if (axis == 'y')
+        pixel = axes.y_2 - (min - value) * (axes.y_1 - axes.y_2) / range;
+    return pixel; 
+}
+
+
 
 void start_training(ALLEGRO_DISPLAY* display) {
     // Initialization
@@ -365,11 +377,14 @@ void start_training(ALLEGRO_DISPLAY* display) {
     float ball_center[2];
 
     draw_results();
-    for (int episode = 0; episode < 10000; episode++) {
+    for (int episode = 0; episode < episode_target; episode++) {
+        tot_reward = 0; 
         bool done = false;
         int steps = 0;
         int counter = 0;
         int traj_counter = 0; 
+        float pixel_x;
+        float pixel_y; 
         while (!done && steps < 100)
         {
             move_camera(action); 
@@ -409,9 +424,11 @@ void start_training(ALLEGRO_DISPLAY* display) {
             traj_counter++;
             steps++;
         }
-        al_draw_pixel(960+episode, 700, al_map_rgb(0, 0, 255)); 
+        pixel_x = rescale('x', ax_totreward_x, 0, episode_target, episode);
+        pixel_y = rescale('y', ax_totreward_y, -10000, 500, tot_reward);
+        al_draw_pixel(pixel_x, pixel_y, al_map_rgb(255, 0, 0));
         //al_draw_pixel(ax_totreward_x.x_1 + episode, ax_totreward_x.y_1 + tot_reward/10000, al_map_rgb(0, 0, 255));
-        al_draw_pixel(ax_framecount_x.x_1 + episode, ax_framecount_x.y_1 + steps, al_map_rgb(0, 0, 255));
+        //al_draw_pixel(ax_framecount_x.x_1 + episode, ax_framecount_x.y_1 + steps, al_map_rgb(0, 0, 255));
         al_flip_display(); 
     }
 }
