@@ -101,14 +101,15 @@ float camera_pan = 0.0, camera_tilt = 0.0;
 // variables training algorithm 
 float tot_reward = 0; 
 int episode_target = 2500; 
-int steps_target = 1000; 
+int steps_target = 200; 
+#define ACTION_NUM 4
 #define REWARD_NEGATIVE -20
 #define REWARD_NEUTRAL -10
 #define REWARD_POSITIVE +1000
-#define BXW 5 // number box width
-#define BXH 3 // number box height
-float Q[BXW * BXH * 4];
-float R[BXW * BXH * 4];
+#define BXW 15 // number box width
+#define BXH 9 // number box height
+float Q[BXW * BXH * ACTION_NUM];
+float R[BXW * BXH * ACTION_NUM];
 int central_box = (BXW * BXH -1) / 2; // NOTE: it works only if the number of boxes is odd!!
 
 float box_width = (disp.w_display / 2 - disp.edge) / BXW;

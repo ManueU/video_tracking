@@ -91,7 +91,7 @@ float* initialize_R() {
             state = i * BXW + j;
             pos_box[0] = box_width / 2 + j * box_width;
             pos_box[1] = box_height / 2 + i * box_height;
-            for (int action = 0; action < 4; action++)
+            for (int action = 0; action < ACTION_NUM; action++)
             {
                 x = pos_box[0];
                 y = pos_box[1];
@@ -110,25 +110,31 @@ float* initialize_R() {
                 case 3:
                     x = x - box_width;
                     break;
+                case 4:
+                    break;
                 }
                 // 0 sotto
                 // 1 sopra 
                 // 2 destra 
                 // 3 sinistra
+                // 4 resta fermo
                 pos_box_temp[0] = x;
                 pos_box_temp[1] = y;
 
                 if (x < box_width * BXW && x > 0 && y < box_height * BXH && y > 0) {
                    distance = euclidean_distance(pos_box_temp, pos_center);
                    if (distance < 2*box_width) {
-                       R[state*4 + action] = REWARD_NEUTRAL;
+                       if (distance <= box_width/2)
+                           R[state * ACTION_NUM + action] = REWARD_POSITIVE;
+                       else 
+                            R[state* ACTION_NUM + action] = REWARD_NEUTRAL;
                    }
                    else {
-                       R[state * 4 + action] = (distance/100)*REWARD_NEGATIVE;
+                       R[state * ACTION_NUM + action] = (distance/100)*REWARD_NEGATIVE;
                    }
                 }
                 else {
-                    R[state * 4 + action] = REWARD_NEGATIVE * 5;
+                    R[state * ACTION_NUM + action] = REWARD_NEGATIVE * 5;
                 }
             }
         }
@@ -139,9 +145,9 @@ float* initialize_R() {
 void initialize_Q() {
     for (int i = 0; i < BXW * BXH; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < ACTION_NUM; j++)
         {
-            Q[i * 4 + j] = 0.0;
+            Q[i * ACTION_NUM + j] = 0.0;
         }
     }
 }
@@ -156,9 +162,9 @@ int choose_action(float* Q, int state, float epsilon)
     }
     else
     {
-        for (int act = 1; act < 4; act++)
+        for (int act = 1; act < ACTION_NUM; act++)
         {
-            if (Q[state * 4 + act] > Q[state * 4 + max_index])
+            if (Q[state * ACTION_NUM + act] > Q[state * ACTION_NUM + max_index])
                 max_index = act;
         }
     }
@@ -168,12 +174,12 @@ int choose_action(float* Q, int state, float epsilon)
 
 float compute_maxQ(float* Q, int state) {
     int maxQ, max_index = 0;
-    for (int act = 1; act < 4; act++)
+    for (int act = 1; act < ACTION_NUM; act++)
     {
-        if (Q[state * 4 + act] > Q[state * 4 + max_index])
+        if (Q[state * ACTION_NUM + act] > Q[state * ACTION_NUM + max_index])
             max_index = act;
     }
-    return  Q[state * 4 + max_index];
+    return  Q[state * ACTION_NUM + max_index];
 }
 
 int compute_state(int action, int current_state) {
@@ -187,57 +193,37 @@ int compute_state(int action, int current_state) {
         next_state = current_state - BXW;
         break;
     case 2:
-        if (current_state % BXW == 0)
+        if ((current_state + 1) % BXW == 0)
             next_state = -100;
         else next_state = current_state + 1; 
         break;
     case 3:
-        if ((current_state + 1) % BXW == 0)
+        if (current_state % BXW == 0)
             next_state = -100;
         else next_state = current_state - 1;         
         break;
+    case 4: 
+        next_state = current_state; 
+        break; 
     }
 
     return next_state;
 }
 
 float decode_reward(int action, int state) {
-    return R[state * 4 + action];
+    return R[state * ACTION_NUM + action];
 }
     
-bool isdone(int next_state, int counter)
+bool isdone(int next_state, int count)
 {
     bool done = false;
-    if (counter == 15)
-        done = true;
-    else if (next_state >= BXW * BXH * 4 || next_state < 0)
+    if (next_state >= BXW * BXH || next_state < 0)
         done = true;
     
     return done;
 }
 
 
-
-void update_Q(float* Q, int box, int old_box, int action, int reward, float gamma, float alpha) {
-    // Updates the Q matrix with the rewards values
-    // Input: Q       - pointer to the Q matrix (vector indiced by rows)
-    //        box     - actual box of the state
-    //        old_box - previous box of the state
-    //        action  - action that has been done
-    //        reward  - reward variable
-    //        gamma   - discount factor
-    //        alpha   - learning rate
-
-    // get the max in the (new) box row
-    static int row_max;// find the
-    if (Q[(2 * box) + 0] > Q[(2 * box) + 1])
-        row_max = Q[(2 * box) + 0];
-    else
-        row_max = Q[(2 * box) + 1];
-
-    // compute Q
-    Q[(2 * old_box) + action] = (1 - alpha) * Q[(2 * old_box) + action] + alpha * (reward + gamma * (row_max));
-}
 
 void ball_center_coordinates(ALLEGRO_DISPLAY* display, float* ball_center) {
     // Riconoscimento pixel rossi
@@ -331,6 +317,7 @@ void visualize(float camera_pan, float camera_tilt) {
     if ((ball_state.x_1 < disp.w_display / 2 - disp.edge) && (ball_state.y_1 < disp.h_display / 2)) {
         al_draw_filled_circle(ball_state.x_1, ball_state.y_1, 20, al_map_rgb(255, 0, 0));
     }
+
     al_flip_display();
 
 }
@@ -349,6 +336,8 @@ void move_camera(int action) {
         break;
     case 3:
         camera_pan = -box_width;
+        break;
+    case 4:
         break;
     }
 }
@@ -373,9 +362,9 @@ void start_training(ALLEGRO_DISPLAY* display) {
 
     for (int st = 0; st < BXW * BXH; st++)
     {
-        for (int act = 0; act < 4; act++)
+        for (int act = 0; act < 5; act++)
         {
-            printf("%f\t", R_prova[st * 4 + act]);
+            printf("%f\t", R_prova[st * 5 + act]);
         }
         printf("\n");
     }
@@ -402,14 +391,18 @@ void start_training(ALLEGRO_DISPLAY* display) {
     float pixel_y_tmp_plot2 = 0;
 
     draw_results();
+    float count_step[2500];
     for (int episode = 0; episode < episode_target; episode++) {
         tot_reward = 0; 
         bool done = false;
         int steps = 0;
         int counter = 0;
         int traj_counter = 0; 
+ 
         while (!done && steps < steps_target)
         {
+            camera_pan = 0.0; 
+            camera_tilt = 0.0; 
             move_camera(action); 
             if (steps == 0)
             {
@@ -441,12 +434,13 @@ void start_training(ALLEGRO_DISPLAY* display) {
                 reward = REWARD_POSITIVE; 
             }
             // update Q
-            Q[state * 4 + action] = (1 - alpha) * Q[state * 4 + action] + alpha * (reward + gamma * maxQ);
+            Q[state * ACTION_NUM + action] = (1 - alpha) * Q[state * ACTION_NUM + action] + alpha * (reward + gamma * maxQ);
             
+            printf("%f \n", epsilon);
 
-            printf("\Q Matrix : \n");
+            //printf("\Q Matrix : \n");
 
-            for (int st = 0; st < BXW * BXH; st++)
+            /*for (int st = 0; st < BXW * BXH; st++)
             {
                 for (int act = 0; act < 4; act++)
                 {
@@ -454,17 +448,21 @@ void start_training(ALLEGRO_DISPLAY* display) {
                 }
                 printf("\n");
             }
-            printf("\n\n\n");
+            printf("\n\n\n");*/
 
             done = isdone(next_state, counter);           
 
-            if (reward == REWARD_NEUTRAL)
+            if (reward == REWARD_NEUTRAL || reward == REWARD_POSITIVE)
                 counter++;
+
 
 
             traj_counter++;
             steps++;
         }
+
+        count_step[episode] = steps; 
+
         epsilon = 0.999*epsilon;
         //printf("%f", epsilon);
 
@@ -489,6 +487,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
         //al_draw_pixel(ax_framecount_x.x_1 + episode, ax_framecount_x.y_1 + steps, al_map_rgb(0, 0, 255));
         al_flip_display(); 
     }
+    
     int daje = 0; 
 }
 
