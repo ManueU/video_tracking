@@ -134,7 +134,7 @@ float* initialize_R() {
                    }
                 }
                 else {
-                    R[state * ACTION_NUM + action] = REWARD_NEGATIVE * 5;
+                    R[state * ACTION_NUM + action] = REWARD_NEGATIVE * 8;
                 }
             }
         }
@@ -358,13 +358,13 @@ float rescale(char axis, AXES axes, int min, int max, float value)
 void start_training(ALLEGRO_DISPLAY* display) {
     // Initialization
     float* R_prova = initialize_R();
-    printf("\nPoints Matrix : \n");
+    printf("\nR Matrix : \n");
 
     for (int st = 0; st < BXW * BXH; st++)
     {
-        for (int act = 0; act < 5; act++)
+        for (int act = 0; act < ACTION_NUM; act++)
         {
-            printf("%f\t", R_prova[st * 5 + act]);
+            printf("%f\t", R_prova[st * ACTION_NUM + act]);
         }
         printf("\n");
     }
@@ -398,7 +398,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
         int steps = 0;
         int counter = 0;
         int traj_counter = 0; 
- 
+        int previous_step = 0; 
         while (!done && steps < steps_target)
         {
             camera_pan = 0.0; 
@@ -429,34 +429,45 @@ void start_training(ALLEGRO_DISPLAY* display) {
             tot_reward += reward; 
             // compute new Q target
             maxQ = compute_maxQ(Q, state);
-            if (counter == 5)
+            if (counter == 3)
             {
-                reward = REWARD_POSITIVE; 
+                reward = REWARD_POSITIVE * 2;
+                counter = 0; 
             }
             // update Q
             Q[state * ACTION_NUM + action] = (1 - alpha) * Q[state * ACTION_NUM + action] + alpha * (reward + gamma * maxQ);
             
             printf("%f \n", epsilon);
 
-            //printf("\Q Matrix : \n");
+            printf("\Q Matrix : \n");
 
-            /*for (int st = 0; st < BXW * BXH; st++)
+            for (int st = 0; st < BXW * BXH; st++)
             {
-                for (int act = 0; act < 4; act++)
+                for (int act = 0; act < ACTION_NUM; act++)
                 {
-                    printf("%f\t", Q[st * 4 + act]);
+                    printf("%f\t", Q[st * ACTION_NUM + act]);
                 }
                 printf("\n");
             }
-            printf("\n\n\n");*/
+            printf("\n\n\n");
 
             done = isdone(next_state, counter);           
 
+            if (counter == 0)
+                previous_step = steps - 1;
+
             if (reward == REWARD_NEUTRAL || reward == REWARD_POSITIVE)
-                counter++;
+            {
+                if ((steps - previous_step) == 1)
+                {
+                    counter++; 
+                    previous_step = steps; 
+                }
+            }
+            else
+                counter = 0; 
 
-
-
+            
             traj_counter++;
             steps++;
         }

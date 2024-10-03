@@ -102,12 +102,12 @@ float camera_pan = 0.0, camera_tilt = 0.0;
 float tot_reward = 0; 
 int episode_target = 2500; 
 int steps_target = 200; 
-#define ACTION_NUM 4
+#define ACTION_NUM 5
 #define REWARD_NEGATIVE -20
-#define REWARD_NEUTRAL -10
-#define REWARD_POSITIVE +1000
-#define BXW 15 // number box width
-#define BXH 9 // number box height
+#define REWARD_NEUTRAL 0
+#define REWARD_POSITIVE 100
+#define BXW 15// number box width
+#define BXH 9//number box height
 float Q[BXW * BXH * ACTION_NUM];
 float R[BXW * BXH * ACTION_NUM];
 int central_box = (BXW * BXH -1) / 2; // NOTE: it works only if the number of boxes is odd!!
