@@ -99,12 +99,14 @@ float camera_pan = 0.0, camera_tilt = 0.0;
 
 
 // variables training algorithm 
+float gamma = 0.9;
+float alpha = 0.1;
 float tot_reward = 0; 
 int episode_target = 2500; 
-int steps_target = 200; 
+int steps_target = 100; 
 #define ACTION_NUM 5
 #define REWARD_NEGATIVE -20
-#define REWARD_NEUTRAL 0
+#define REWARD_NEUTRAL -10
 #define REWARD_POSITIVE 100
 #define BXW 15// number box width
 #define BXH 9//number box height
