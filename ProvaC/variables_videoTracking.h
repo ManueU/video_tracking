@@ -34,6 +34,12 @@ typedef struct { // struct assi
 } AXES;
 
 typedef struct {
+    int pan;       // -1, 0, 1
+    int tilt;      // -1, 0, 1
+    int velocity;  // 1, 2, 3
+} Action;
+
+typedef struct {
   float x_1;       // x position ball 1
   float y_1;       // y position ball 1
   float x_2;       // x position ball 2 (trajectory)
@@ -104,7 +110,10 @@ float alpha = 0.1;
 float tot_reward = 0; 
 int episode_target = 2500; 
 int steps_target = 100; 
-#define ACTION_NUM 5
+#define NUM_PAN 3
+#define NUM_TILT 3 
+#define NUM_VEL 3
+#define ACTION_NUM 27
 #define REWARD_NEGATIVE -20
 #define REWARD_NEUTRAL -10
 #define REWARD_POSITIVE 100
@@ -113,6 +122,8 @@ int steps_target = 100;
 float Q[BXW * BXH * ACTION_NUM];
 float R[BXW * BXH * ACTION_NUM];
 int central_box = (BXW * BXH -1) / 2; // NOTE: it works only if the number of boxes is odd!!
+
+Action action; 
 
 float box_width = (disp.w_display / 2 - disp.edge) / BXW;
 float box_height = (disp.h_display / 2) / BXH;

@@ -81,43 +81,38 @@ float euclidean_distance(float pos1[2], float pos2[2]) {
     return sqrt(dx * dx + dy * dy);
 }
 
+
+// Mapping Action to an Action ID (0-26)
+int get_action_id(Action action) {
+    return (action.pan + 1) * (NUM_PAN + NUM_TILT + NUM_VEL) + (action.tilt + 1) * NUM_PAN + (action.velocity - 1);
+}
+
+// Mapping Action ID to Action
+Action get_action_from_id(int action_id) {
+    Action action;
+    action.pan = (action_id / (NUM_PAN + NUM_TILT + NUM_VEL)) - 1;
+    action.tilt = ((action_id % (NUM_PAN + NUM_TILT + NUM_VEL)) / NUM_PAN) - 1;
+    action.velocity = (action_id % NUM_VEL) + 1;
+    return action;
+}
+
 float* initialize_R() {
     float pos_box[2], pos_box_temp[2];
     float x, y;
     float distance;
     int state; 
+
     for (int i = 0; i < BXH; i++) {
         for (int j = 0; j < BXW; j++) {
             state = i * BXW + j;
             pos_box[0] = box_width / 2 + j * box_width;
             pos_box[1] = box_height / 2 + i * box_height;
-            for (int action = 0; action < ACTION_NUM; action++)
+            for (int action_id = 0; action_id < ACTION_NUM; action_id++)
             {
-                x = pos_box[0];
-                y = pos_box[1];
+                action = get_action_from_id(action_id);
+                x = pos_box[0] + action.pan * box_width * action.velocity;
+                y = pos_box[1] - action.tilt * box_width * action.velocity;
 
-                switch (action)
-                {
-                case 0:
-                    y = y + box_height;
-                    break;
-                case 1:
-                    y = y - box_height;
-                    break;
-                case 2:
-                    x = x + box_width;
-                    break;
-                case 3:
-                    x = x - box_width;
-                    break;
-                case 4:
-                    break;
-                }
-                // 0 sotto
-                // 1 sopra 
-                // 2 destra 
-                // 3 sinistra
-                // 4 resta fermo
                 pos_box_temp[0] = x;
                 pos_box_temp[1] = y;
 
@@ -125,16 +120,16 @@ float* initialize_R() {
                    distance = euclidean_distance(pos_box_temp, pos_center);
                    if (distance < 2*box_width) {
                        if (distance <= box_width/2)
-                           R[state * ACTION_NUM + action] = REWARD_POSITIVE;
+                           R[state * ACTION_NUM + action_id] = REWARD_POSITIVE;
                        else 
-                            R[state* ACTION_NUM + action] = REWARD_NEUTRAL;
+                            R[state* ACTION_NUM + action_id] = REWARD_NEUTRAL;
                    }
                    else {
-                       R[state * ACTION_NUM + action] = (distance/100)*REWARD_NEGATIVE;
+                       R[state * ACTION_NUM + action_id] = (distance/100)*REWARD_NEGATIVE;
                    }
                 }
                 else {
-                    R[state * ACTION_NUM + action] = REWARD_NEGATIVE * 8;
+                    R[state * ACTION_NUM + action_id] = REWARD_NEGATIVE * 8;
                 }
             }
         }
@@ -154,11 +149,10 @@ void initialize_Q() {
 
 int choose_action(float* Q, int state, float epsilon)
 {
-    // actions from 0 to 3
     int max_index = 0;
     if (randf(0, 1) <= epsilon)
     {
-        max_index = randi(0, 3);
+        max_index = randi(0, ACTION_NUM - 1);
     }
     else
     {
@@ -182,30 +176,29 @@ float compute_maxQ(float* Q, int state) {
     return  Q[state * ACTION_NUM + max_index];
 }
 
-int compute_state(int action, int current_state) {
-    int next_state;
-    switch (action)
+int compute_ball_state(float* ball_center) {
+    int state;
+    if (ball_center[0] == -100)
     {
-    case 0:
-        next_state = current_state + BXW;
-        break;
-    case 1:
-        next_state = current_state - BXW;
-        break;
-    case 2:
-        if ((current_state + 1) % BXW == 0)
-            next_state = -100;
-        else next_state = current_state + 1; 
-        break;
-    case 3:
-        if (current_state % BXW == 0)
-            next_state = -100;
-        else next_state = current_state - 1;         
-        break;
-    case 4: 
-        next_state = current_state; 
-        break; 
+        state = -1;
     }
+    else
+    {
+        int x_box = int(ball_center[0] / box_width);
+        int y_box = int(ball_center[1] / box_height);
+        state = y_box * BXW + x_box;
+    }
+
+    return state;
+}
+
+int compute_state(int current_state, float* ball_center) {
+    int next_state;
+    float ball_center_next[2]; 
+
+    ball_center_next[0] = ball_center[0] + action.pan * box_width * action.velocity;
+    ball_center_next[1] = ball_center[1]-action.tilt * box_height * action.velocity;
+    next_state = compute_ball_state(ball_center_next);
 
     return next_state;
 }
@@ -262,22 +255,6 @@ void ball_center_coordinates(ALLEGRO_DISPLAY* display, float* ball_center) {
 }
 
 
-int compute_ball_state(float* ball_center) {
-    int state; 
-    if (ball_center[0] == -100)
-    {
-        state = -1; 
-    }
-    else 
-    {
-        int x_box = int(ball_center[0]/ box_width);
-        int y_box = int(ball_center[1] / box_height);
-        state = y_box * BXW + x_box;
-    }
-
-    return state;
-}
-
 void draw_trajectory(int trajectory_ID) {
     al_draw_line(trajectory_ax_x.x_1, trajectory_ax_x.y_1, trajectory_ax_x.x_2, trajectory_ax_x.y_2, al_map_rgb(255, 255, 255), 2);
     al_draw_line(trajectory_ax_y.x_1, trajectory_ax_y.y_1, trajectory_ax_y.x_2, trajectory_ax_y.y_2, al_map_rgb(255, 255, 255), 2);
@@ -322,24 +299,10 @@ void visualize(float camera_pan, float camera_tilt) {
 
 }
 
-void move_camera(int action) {
-    switch (action)
-    {
-    case 0:
-        camera_tilt = box_height;
-        break;
-    case 1:
-        camera_tilt = -box_height;
-        break;
-    case 2:
-        camera_pan = box_width;
-        break;
-    case 3:
-        camera_pan = -box_width;
-        break;
-    case 4:
-        break;
-    }
+void move_camera(int action_id) {
+    action = get_action_from_id(action_id);
+    camera_pan = action.pan * box_width * action.velocity;
+    camera_tilt = - action.tilt * box_width * action.velocity;
 }
 
 float rescale(char axis, AXES axes, int min, int max, float value)
@@ -387,7 +350,6 @@ void start_simulation(ALLEGRO_DISPLAY* display) {
 }
 
 void start_training(ALLEGRO_DISPLAY* display) {
-    start_simulation(display);
     // Initialization
     float* R_prova = initialize_R();
     printf("\nR Matrix : \n");
@@ -402,7 +364,14 @@ void start_training(ALLEGRO_DISPLAY* display) {
     }
     printf("\n\n\n");
 
-    //initialize_Q();
+    /*action = get_action_from_id(3);
+    printf("pan %d \n", action.pan); 
+    printf("tilt %d \n", action.tilt);
+    printf("vel %d \n", action.velocity);*/
+
+
+
+    initialize_Q();
     float epsilon = 0.1;
     int state;
     int action = -100, next_state;
@@ -441,10 +410,10 @@ void start_training(ALLEGRO_DISPLAY* display) {
             }
             else
             {
-                ball_state.x_1 = ball_state.x_1 + (x_plot[traj_counter] - x_plot[traj_counter - 1]) + camera_pan; // 20 è una scale_factor altrimenti la pallina va troppo veloce
-                ball_state.y_1 = ball_state.y_1 + (y_plot[traj_counter] - y_plot[traj_counter - 1]) + camera_tilt; // 20 è una scale_factor altrimenti la pallina va troppo veloce
-                //ball_state.x_1 = ball_state.x_1 + camera_pan;
-                //ball_state.y_1 = ball_state.y_1 + camera_tilt;
+                //ball_state.x_1 = ball_state.x_1 + (x_plot[traj_counter] - x_plot[traj_counter - 1]) + camera_pan; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+                //ball_state.y_1 = ball_state.y_1 + (y_plot[traj_counter] - y_plot[traj_counter - 1]) + camera_tilt; // 20 è una scale_factor altrimenti la pallina va troppo veloce
+                ball_state.x_1 = ball_state.x_1 + camera_pan;
+                ball_state.y_1 = ball_state.y_1 + camera_tilt;
             }
                 
             ball_state.x_2 = x_plot[traj_counter];
@@ -453,7 +422,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
             ball_center_coordinates(display, ball_center);
             state = compute_ball_state(ball_center);
             action = choose_action(Q, state, epsilon);
-            next_state = compute_state(action, state);
+            next_state = compute_state(state, ball_center);
             // scelta reward da R
             reward = decode_reward(action, state);
             tot_reward += reward; 
@@ -504,7 +473,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
 
         count_step[episode] = steps; 
 
-        //epsilon = 0.997*epsilon;
+        epsilon = 0.997*epsilon;
         //printf("%f", epsilon);
 
         pixel_x_plot1 = rescale('x', ax_totreward_x, 0, episode_target, episode);
