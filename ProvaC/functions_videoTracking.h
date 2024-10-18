@@ -122,7 +122,11 @@ float* initialize_R() {
                        if (distance <= box_width/2)
                            R[state * ACTION_NUM + action_id] = REWARD_POSITIVE;
                        else 
+                       {
                             R[state* ACTION_NUM + action_id] = REWARD_NEUTRAL;
+                            if (action.pan == 0 && action.tilt == 0)
+                                R[state * ACTION_NUM + action_id] = REWARD_NEUTRAL - 10; 
+                       }
                    }
                    else {
                        R[state * ACTION_NUM + action_id] = (distance/100)*REWARD_NEGATIVE;
@@ -372,7 +376,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
 
 
     initialize_Q();
-    float epsilon = 0.1;
+    float epsilon = 1;
     int state;
     int action = -100, next_state;
     bool is_acceptable;
@@ -390,7 +394,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
     float pixel_y_tmp_plot2 = 0;
 
     draw_results();
-    float count_step[2500];
+    float count_step[episode_target];
     for (int episode = 0; episode < episode_target; episode++) {
         tot_reward = 0; 
         bool done = false;
@@ -405,8 +409,10 @@ void start_training(ALLEGRO_DISPLAY* display) {
             move_camera(action); 
             if (steps == 0)
             {
-                ball_state.x_1 = (disp.w_display - disp.edge) / 4 - disp.w_display/8; // disp.w_display/8 è un offset per far iniziare il training non dal centro
-                ball_state.y_1 = disp.h_display / 4;
+                int x_start = randi(0, disp.w_display) - disp.w_display / 2;
+                int y_start = randi(0, disp.h_display) - disp.h_display / 2;
+                ball_state.x_1 = ((disp.w_display - disp.edge) / 4) + x_start; // disp.w_display/8 è un offset per far iniziare il training non dal centro
+                ball_state.y_1 = (disp.h_display/ 4) + y_start;
             }
             else
             {
@@ -438,18 +444,6 @@ void start_training(ALLEGRO_DISPLAY* display) {
             
             printf("%f \n", epsilon);
 
-            printf("\Q Matrix : \n");
-
-            for (int st = 0; st < BXW * BXH; st++)
-            {
-                for (int act = 0; act < ACTION_NUM; act++)
-                {
-                    printf("%f\t", Q[st * ACTION_NUM + act]);
-                }
-                printf("\n");
-            }
-            printf("\n\n\n");
-
             done = isdone(next_state, counter);           
 
             if (counter == 0)
@@ -473,7 +467,7 @@ void start_training(ALLEGRO_DISPLAY* display) {
 
         count_step[episode] = steps; 
 
-        epsilon = 0.997*epsilon;
+        epsilon = 0.9999*epsilon;
         //printf("%f", epsilon);
 
         pixel_x_plot1 = rescale('x', ax_totreward_x, 0, episode_target, episode);
@@ -497,7 +491,17 @@ void start_training(ALLEGRO_DISPLAY* display) {
         //al_draw_pixel(ax_framecount_x.x_1 + episode, ax_framecount_x.y_1 + steps, al_map_rgb(0, 0, 255));
         al_flip_display(); 
     }
-    
+    printf("\Q Matrix : \n");
+
+    for (int st = 0; st < BXW * BXH; st++)
+    {
+        for (int act = 0; act < ACTION_NUM; act++)
+        {
+            printf("%f\t", Q[st * ACTION_NUM + act]);
+        }
+        printf("\n");
+    }
+    printf("\n\n\n");
     int daje = 0; 
 }
 

@@ -108,8 +108,8 @@ float camera_pan = 0.0, camera_tilt = 0.0;
 float gamma = 0.9;
 float alpha = 0.1;
 float tot_reward = 0; 
-int episode_target = 2500; 
 int steps_target = 100; 
+#define episode_target 10000
 #define NUM_PAN 3
 #define NUM_TILT 3 
 #define NUM_VEL 3
